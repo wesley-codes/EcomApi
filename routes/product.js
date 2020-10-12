@@ -15,7 +15,7 @@ const route = express.Router();
 const dotenv = require("dotenv");
 
 const storage = multer.diskStorage({
-  destination: "../DB/uploads",
+  destination: "./routes/uploads",
   filename: (req, file, cb) => {
     cb(
       null,
@@ -50,9 +50,13 @@ function checkFileType(file, cb) {
 
 //=======CREATING A POST REQUEST FUNCTION========
 router.route("/add", upload).post((req, res) => {
-  let desModel = new ProductDes(req.body);
+  let desModel = new ProductDes({
+    productName: req.body.productName,
+    description: req.body.description,
+    image: req.file.path
+  });
   console.log(req.body);
-  
+
   desModel
     .save()
     .then(() => {
