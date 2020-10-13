@@ -1,62 +1,46 @@
 const assert = require("assert");
 const express = require("express");
-const router = require("express").Router();
-
 const path = require("path");
 const mongoose = require("mongoose");
-
 const multer = require("multer");
 
 //==========REQUIRING/IMPORTING PRODUCTDES VARIABLE FROM THE ROUTE ../DB/DESCRPTIONMODEL==========
 const ProductDes = require("../DB/descriptionModel");
 const { json } = require("body-parser");
 const { response } = require("express");
-const route = express.Router();
+const router = express.Router();
 const dotenv = require("dotenv");
+const { log } = require("console");
 
 const storage = multer.diskStorage({
-  destination: "./routes/uploads",
-  filename: (req, file, cb) => {
+  destination: function (req, file, cb) {
+    cb(null,'./routes/uploads')
+  },
+  filename: function(req, file, cb)  {
     cb(
       null,
-      file.fieldname + "-" + Date.now() + path.extname(file.originalname)
+      new Date().toISOString()+ file.originalname
     );
   },
 });
 
+const upload = multer({storage: storage })
+
 // Init upload variable
-const upload = multer({
-  storage: storage,
-  fileFilter: function (req, file, cb) {
-    checkFileType(file, cb);
-  },
-}).array("image");
+
 
 //check file type
-function checkFileType(file, cb) {
-  //allowed ext
-  const filetypes = /jpeg|jpg|png/;
-  //check ext
-  const extname = filetypes.test(path.extname(file.originalname).toLowerCase);
-  //cheeck mimetype
-  const mimetype = filetypes.test(file.mimetype);
 
-  if (mimetype && extname) {
-    return cb(null, true);
-  } else {
-    cb("Error: images only");
-  }
-}
 
 //=======CREATING A POST REQUEST FUNCTION========
-router.route("/add", upload).post((req, res) => {
+router.post("/add", upload.single('image'), (req, res) => {
   let desModel = new ProductDes({
     productName: req.body.productName,
     description: req.body.description,
-    image: req.file.path
+    image:req.file.path
   });
-  console.log(req.body);
-
+  console.log('file>>>',req.file);
+  console.log(desModel);
   desModel
     .save()
     .then(() => {
@@ -81,7 +65,7 @@ router.route("/add", upload).post((req, res) => {
 // });
 
 //=====FETCH ALL DATA===========
-router.route("/").get((req, res) => {
+router.get("/",(req, res) => {
   ProductDes.find()
     .then((result) => {
       res.send(result);
@@ -92,7 +76,7 @@ router.route("/").get((req, res) => {
 });
 
 //==========TO FETCH A PARTICULAR DATA==========
-router.route("/:id").get((req, res) => {
+router.get("/:id",(req, res) => {
   const id = req.params.id;
   console.log(id);
   ProductDes.findOne({ _id: req.params.id })
@@ -104,7 +88,7 @@ router.route("/:id").get((req, res) => {
     });
 });
 //========== UPDATE A PARTICULAR FIELD ==========
-router.route("/update/:id").put((req, res) => {
+router.put("/update/:id",(req, res) => {
   const id = req.params.id;
   ProductDes.findByIdAndUpdate({ _id: req.params.id }, { ...req.body }).then(
     () => {
@@ -115,7 +99,7 @@ router.route("/update/:id").put((req, res) => {
 
 //
 // ==========DELETE DATA FROM DATABASE============
-router.route("/delete/:id").delete((req, res) => {
+router.delete("/delete/:id",(req, res) => {
   const id = req.params.id;
   ProductDes.findByIdAndDelete({ _id: req.params.id }).then((result) => {
     res.json({ message: "product deleted from database" });
