@@ -1,46 +1,47 @@
-const assert = require("assert");
+
 const express = require("express");
 const path = require("path");
 const mongoose = require("mongoose");
-const multer = require("multer");
+const multer = require("multer")
 
+const fs = require("fs")
+var fileupload =require("express-fileupload")
 //==========REQUIRING/IMPORTING PRODUCTDES VARIABLE FROM THE ROUTE ../DB/DESCRPTIONMODEL==========
 const ProductDes = require("../DB/descriptionModel");
 const { json } = require("body-parser");
 const { response } = require("express");
 const router = express.Router();
-const dotenv = require("dotenv");
+ require("dotenv").config()
 const { log } = require("console");
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null,'./routes/uploads')
-  },
-  filename: function(req, file, cb)  {
-    cb(
-      null,
-      new Date().toISOString()+ file.originalname
-    );
-  },
-});
 
-const upload = multer({storage: storage })
-
-// Init upload variable
+var cloudinary = require("cloudinary").v2
+  cloudinary.config({
+  cloud_name : "+++++++",
+  api_key : "+++++" ,
+  api_secret : "+++++"
+})
 
 
-//check file type
 
 
-//=======CREATING A POST REQUEST FUNCTION========
+
+
+var upload = multer({dest: "uploads/" })
+
+
 router.post("/add", upload.single('image'), (req, res) => {
-  let desModel = new ProductDes({
-    productName: req.body.productName,
-    description: req.body.description,
-    image:req.file.path
-  });
-  console.log('file>>>',req.file);
-  console.log(desModel);
+  
+  console.log("result >>>",req.file)
+   cloudinary.uploader.upload(req.file.path, function(error,result){
+     console.log(result)
+  
+const desModel =  ProductDes({
+  productName: req.body.productName,
+      description: req.body.description,
+      image:req.file.path
+})
+
   desModel
     .save()
     .then(() => {
@@ -51,18 +52,17 @@ router.post("/add", upload.single('image'), (req, res) => {
       console.log(err);
     });
 });
+})
 
-// router.route("/upload/Image").post((req, res) => {
-//   cloudinary.uploader
-//     .upload(path.join(process.cwd(), "routes", "21.png"))
-//     .then((result) => {
-//       console.log(result);
-//       res.json({ message: "Data successfully pushed to the database" });
-//     })
-//     .catch((err) => {
-//       return res.json(err);
-//     });
-// });
+
+
+
+
+
+
+
+
+
 
 //=====FETCH ALL DATA===========
 router.get("/",(req, res) => {
